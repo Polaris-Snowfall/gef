@@ -29,16 +29,40 @@ This includes the current values of items configurable with `gef config` and use
 ## What is `/tmp/gef`?
 This is the directory where GEF temporarily stores files.
 
-Since it is used for caching, there is no problem in deleting it.
+As it is used for caching, deleting it does not cause any issues.
 It will be created automatically the next time GEF starts.
 
 ## What is `install-minimal.sh`?
-This is an installer for running GEF in limited environments where required packages cannot be installed for some reason.
+This is an installer for running GEF in restricted environments where required packages cannot be installed due to various limitations.
 
-The essence of it is very simple. Just download `gef.py`, place it, and add its path to `.gdbinit`.
+Usage:
+```
+# For any Ubuntu version
+wget -q https://raw.githubusercontent.com/bata24/gef/dev/install-minimal.sh -O- | sh
+```
 
-* To use all feature (=GEF's command), use `install.sh`.
-* If you do not need some features (used in a limited environment), use `install-minimal.sh`. It should work at least except some commands.
+Use this if you don't require all features (suitable for restricted environments).
+It should work for most functionalities, though some commands may not be available.
+The process is straightforward: download `gef.py`, place it in the appropriate location, and add its path to `.gdbinit`.
+You could also do the same thing manually.
+
+## What is `install-venv.sh`?
+This is the virtual environment (`venv`) version of `install.sh`.
+
+This will install the same packages as `install.sh`.
+The only difference is that the Python package will be installed into the `venv` environment.
+By default, it will be installed into `/root/.venv-gef`.
+
+Usage:
+```
+# For any Ubuntu version
+wget -q https://raw.githubusercontent.com/bata24/gef/dev/install-venv.sh -O- | sh
+```
+
+Before starting `gdb`, you need to execute the following command to activate the `venv` environment:
+```
+source /root/.venv-gef/bin/activate
+```
 
 
 # About the install
@@ -50,12 +74,13 @@ If you want to use GEF as a user other than root, add `source /path/to/.gdbinit-
 
 ## I don't want to specify the `--break-system-packages` option during installation.
 You have some options:
+* Use [`install-minimal.sh`](../install-minimal.sh) to skip installing with `pip`.
+* Use [`install-venv.sh`](../install-venv.sh) to avoid affecting the global environment.
 * Install inside docker to prevent impact on the host environment.
-* Use [`install-minimal.sh`](https://github.com/bata24/gef/blob/dev/install-minimal.sh) to skip installing with `pip`.
-* Use `venv` or `pyenv` to manage Python modules individually.
+* Install inside another virtual machine.
 
 ## How can I install GEF offline?
-Please refer to [`install.sh`](https://github.com/bata24/gef/blob/dev/install.sh) or [`install-minimal.sh`](https://github.com/bata24/gef/blob/dev/install-minimal.sh), and set it up manually.
+Please refer to [`install.sh`](../install.sh), [`install-minimal.sh`](../install-minimal.sh) or [`install-venv.sh`](../install-venv.sh) and set it up manually.
 
 Note: GEF is designed to have as few dependencies as possible.
 Many commands should work with just `gef.py` without any additional external tools.
@@ -64,39 +89,57 @@ If you do not install external tools, the features that are not available are li
 ## If I do not install external tools, which commands will no longer be available?
 Following are the breakdown. It may not be comprehensive.
 
-If you install with `install-minimal.sh`, you will not be able to use these commands unless you install the required packages and tools.
+To use these commands fully, you need to manually install the necessary packages and tools.
 
-|GEF command/feature|required apt package|required python3 package|required other tools|
+|GEF command/feature|Required apt package|Required python3 package|Required other tools|
 |:---|:---|:---|:---|
 |(`gef`)|`gdb` or `gdb-multiarch`|-|-|
 |`got`|`binutils` (`objdump`, `readelf`)|-|-|
-|`rp --kernel`|`binutils` (`nm`)|-|-|
-|`qemu-device-info`|`binutils` (`nm`)|-|-|
+|`got --cppfilt`|`binutils` (`c++filt`)|-|-|
 |`add-symbol-temporary`|`binutils` (`objcopy`)|-|-|
 |`ksymaddr-remote-apply`|`binutils` (`objcopy`)|-|-|
+|`ksymaddr-remote --vmlinux-file`|`binutils` (`nm`)|-|-|
+|`qemu-device-info`|`binutils` (`nm`)|-|-|
+|`rp`|`binutils` (`nm`)|-|`rp++`|
+|`binwalk-memory`|`binwalk`|-|-|
+|`diffo colordiff`|`colordiff`|-|-|
 |`diffo git-diff`|`git`|-|-|
-|`vmlinux-to-elf-apply`|`python3-pip`, `git`|`vmlinux-to-elf`|-|
-|`uefi-ovmf-info`|`python3-pip`|`crccheck`|-|
-|`hash-memory -v`|`python3-pip`|`crccheck`|-|
-|`unicorn-emulate`|`python3-pip`|`unicorn`, `capstone`|-|
+|`sixel-memory`|`imagemagick`|-|-|
+|`sixel-memory -b`|`python3-pip`|`pillow`, `pyzbar`|-|
+|`ktask -S`|`ruby-dev`|-|`seccomp-tools`|
+|`seccomp-tools`|`ruby-dev`|-|`seccomp-tools`|
+|`onegadget`|`ruby-dev`|-|`one_gadget`|
+|Progress Indicator|`python3-pip`|`tqdm`|-|
+|`angr`|`python3-pip`|`angr`|-|
+|`asm-list`|`python3-pip`|`capstone`|-|
 |`capstone-disassemble`|`python3-pip`|`capstone`|-|
 |`dasm`|`python3-pip`|`capstone`|-|
-|`asm-list`|`python3-pip`|`capstone`|-|
 |`i8086` mode|`python3-pip`|`capstone`|-|
-|`ropper`|`python3-pip`|`ropper`|-|
-|`mprotect`|`python3-pip`|`keystone-engine`|-|
+|`unicorn-emulate`|`python3-pip`|`capstone`, `unicorn`, `setuptools`(python 3.12~)|-|
+|`heap try-free`|`python3-pip`|`capstone`, `unicorn`, `setuptools`(python 3.12~)|-|
+|`heap try-malloc`|`python3-pip`|`capstone`, `unicorn`, `setuptools`(python 3.12~)|-|
+|`heap try-realloc`|`python3-pip`|`capstone`, `unicorn`, `setuptools`(python 3.12~)|-|
+|`heap try-calloc`|`python3-pip`|`capstone`, `unicorn`, `setuptools`(python 3.12~)|-|
 |`asm`|`python3-pip`|`keystone-engine`|-|
-|(Progress Indicator)|`python3-pip`|`tqdm`|-|
-|`onegadget`|`ruby-dev`|-|`one_gadget`|
-|`seccomp-tools`|`ruby-dev`|-|`seccomp-tools`|
-|`ktask -S`|`ruby-dev`|-|`seccomp-tools`|
-|`rp`|-|-|`rp++`|
+|`base-n-decode`|`python3-pip`|`codext`|-|
+|`base-n-encode`|`python3-pip`|`codext`|-|
+|`crc`|`python3-pip`|`crccheck`|-|
+|`hash`|`python3-pip`|`pycryptodome`|-|
+|`uefi-ovmf-info`|`python3-pip`|`crccheck`|-|
+|`filetype-memory`|`python3-pip`, `file`|`magika`|-|
+|`ropper`|`python3-pip`|`ropper`|-|
+|`vmlinux-to-elf-apply`|`python3-pip`, `git`|`vmlinux-to-elf`|-|
+
+## Why are there so many packages to install when `apt-get install` of `install.sh`?
+Because the `binwalk` package has a huge number of dependencies.
+
+If you do not use `binwalk-memory` command, you do not need to install `binwalk` (Please modify `install.sh` manually).
 
 
 # About the host environment
 
 ## Does GEF work properly on OS other than Ubuntu?
-Yes, it probably works fine for regular Linux.
+Yes, it likely works well on most standard Linux distributions.
 
 I have used it on debian. Some users are running it on Arch Linux.
 Also it seems to be working fine on WSL2 (ubuntu) so far.
@@ -106,7 +149,7 @@ However, I have not confirmed that all commands work correctly.
 No, it doesn't work. It replaces `hugsy/gef`.
 
 The compatibility with `hugsy/gef` has already been lost. Of course, `hugsy/gef-extras` too.
-Think of it as a completely different product.
+It should be considered as an entirely separate product.
 
 Similarly, this GEF cannot be used at the same time as `peda` or `pwndbg`.
 Make sure you only load one of them.
@@ -114,12 +157,12 @@ Make sure you only load one of them.
 ## GDB will not load GEF.
 This is probably because gdb does not support cooperation with python3.
 
-Consider building gdb from latest tarball or git.
+Consider building GDB from the latest tarball or Git repository.
 
 * from latest tarball
     * Download latest tarball from https://ftp.gnu.org/gnu/gdb/
     ```
-    tar xf gdb-14.2.tar.xz && cd gdb-14.2
+    tar xf gdb-15.2.tar.xz && cd gdb-15.2
     ./configure --enable-targets=all --with-python=/usr/bin/python3
     make && make install
     ```
@@ -132,12 +175,19 @@ Consider building gdb from latest tarball or git.
     ```
 
 ## When debugging with gdb, how can I display the source code of preinstalled libraries and commands?
-Although it is limited to Ubuntu 22.10 or later, it is recommended to use `debuginfod`.
+For Ubuntu 22.10 and later versions, it is recommended to use `debuginfod`.
 
 * Enable `debuginfod` (ubuntu 22.10~)
     ```
     export DEBUGINFOD_URLS="https://debuginfod.ubuntu.com"
     echo "set debuginfod enabled on" >> ~/.gdbinit
+    ```
+
+* If you are not able to use `debuginfod`, please set the symbols manually.
+    ```
+    # Not necessary if debuginfod is enabled
+    apt install libc6-dbg
+    echo "set debug-file-directory /usr/lib/debug" >> ~/.gdbinit
     ```
 
 However, for some reason `debuginfod` does not display the `glibc` source code.
@@ -158,17 +208,11 @@ I don't really understand the reason for this.
     # Need to fix version for your environment.
     ```
 
-* Also add `glibc` symbols
-    ```
-    apt install libc6-dbg
-    echo "set debug-file-directory /usr/lib/debug" >> ~/.gdbinit
-    ```
-
 
 # About the guest (debugged) environment
 
 ## What Linux kernel versions does GEF support as guests in qemu-system?
-I have confirmed that most commands work on versions 3.x ~ 6.11.x.
+I have confirmed that most commands work on versions 3.x ~ 6.14.x.
 
 However, I have not verified every kernel version.
 For example, certain symbols in some versions may not be supported by heuristic symbol detection.
@@ -179,14 +223,21 @@ If you have any trouble, please report it on the issue page.
 ## Is there a way to get a pre-built kernel of each version?
 I use [https://kernel.ubuntu.com/](https://kernel.ubuntu.com/mainline).
 
-Download `linux-image-unsigned-*_amd64.deb` your preferred, and extract `/boot/vmlinuz-*`.
+Download your preferred `linux-image-unsigned-*_amd64.deb` file, then extract `/boot/vmlinuz-*` file from it.
 No filesystem image is provided. Please use the one created with `buildroot` or provided in past CTF challenges.
 
-## Will each GEF command be more accurate if I have `vmlinux` with debug symbols?
-No, whether `vmlinux` includes debug information has no effect on GEF behavior.
+Download `linux-modules-*_amd64.deb` for `System.map` and `config`.
 
-GEF always uses its own resolved address with `ksymaddr-remote`.
-It also performs its own heuristic structure member detection in each command.
+## Will each GEF command be more accurate if I have `vmlinux` with debug symbols?
+Let's consider debug information and debug symbols separately.
+
+* Debug information
+    * No, the presence or absence of debug information in `vmlinux` does not impact GEF's functionality or behavior.
+        * GEF performs its own heuristic structure member detection in each command.
+* Debug symbols
+    * Yes, you can use `ksymaddr-remote --vmlinux-file <vmlinux file path>`.
+        * GEF internally uses the address resolved with `ksymaddr-remote`, and this result is cached.
+        * Therefore, by specifying the `vmlinux` file, the results of `ksymaddr-remote` can be replaced with accurate values and cached.
 
 ## Does GEF support i386 16-bit mode (real mode)?
 Yes, GEF supports real mode experimentally.
@@ -194,21 +245,7 @@ Yes, GEF supports real mode experimentally.
 Use `qemu-system-i386`, and do NOT use `qemu-system-x86_64`.
 Explicitly specify the i8086 architecture before connecting: `gdb -ex 'set architecture i8086' -ex 'target remote localhost:1234'`.
 
-GEF will switch to and from 32-bit mode automatically.
-
-## Does GEF support to debug Android?
-I have never tried it, so I don't know.
-
-I think it will work for userland debugging.
-However, Android does not use `glibc`, so the heap structure is different.
-Therefore, I think at least `heap` related commands will not work.
-
-Regarding kernel debugging, I haven't been able to confirm how much the structure is different.
-
-## Does GEF support TEE OS other than OP-TEE?
-No, GEF does not support it.
-
-If there is publicly available test image, I consider developing to support that OS.
+GEF automatically handles the transition between 16-bit real mode and 32-bit protected mode.
 
 ## Is it possible to debug userland with GEF when using qemu-system?
 Partially yes.
@@ -218,7 +255,7 @@ However, of course, I do not recommend continually debugging userland with qemu-
 This is because many commands are restricted for various reasons.
 Consider setting up `gdbserver` in the guest and connecting from the outside.
 
-Note: If KPTI is enabled, many kernel-related commands cannot be used.
+Note: If KPTI is enabled, many kernel-related commands cannot be used in userland.
 The reason is that most memory access to kernel space is unavailable if KPTI is enabled.
 
 ## How do I break in userland when using qemu-system?
@@ -231,23 +268,48 @@ the virtual address of the process you wanted isn't mapped.
 For this reason, software breakpoints that embed `0xcc` in virtual memory cannot be used in some situations.
 However, hardware breakpoints can be used without any problems.
 
+## Does GEF support debugging of the Android kernel?
+Yes, it is supported, but not fully.
+
+When I tried using `Android Studio`, most commands seemed to work.
+* I used `Android Studio` on Windows and connected from Linux.
+* Refer to [docs/SUPPORTED-MODE.md](SUPPORTED-MODE.md) for the commands I used.
+
+However, the QEMU in `Android Studio` is based on an older version, 2.12.0, and seems to have compatibility issues with recent GDB versions (16.x~).
+Specifically, repeated memory reads may cause QEMU's GDB stub to return incorrect results.
+This is especially noticeable for commands that do repeated memory access, such as `ktask` and `kchecksec`.
+
+## Does GEF support debugging of the Android userland binary?
+Yes, it is supported, but not fully.
+
+When I tried using `Android Studio`, most commands seemed to work.
+* I used `Android Studio` on Windows and connected from Linux.
+* Refer to [docs/SUPPORTED-MODE.md](SUPPORTED-MODE.md) for the commands I used.
+
+However, Android does not use glibc (it uses the bionic C library).
+So be aware that all glibc-specific commands cannot be used, such as the `heap` command.
+
+## Does GEF support TEE OS other than OP-TEE?
+No, GEF does not support it.
+
 
 # About GEF settings
 
 ## I prefer the AT&T style.
-Please specify each time using the `set disassembly-flavor att` command.
+You can set the AT&T style for each session using the `set disassembly-flavor att` command.
 
 Or, since the `set disassembly-flavor intel` command is executed in the main function of GEF, it may be a good idea to comment it out.
-However, since GEF does not take AT&T syntax parsing into consideration, so some commands may do not work fine.
+However, as GEF is not optimized for AT&T syntax parsing, some commands may not function correctly.
 If you find a case where it doesn't work, please report it on the issue page.
 
 ## I don't like the color scheme.
-Customize it using the `theme` command, then `gef save`. The config is saved to `~/.gef.rc`.
+Customize it using the `theme` command, then `gef save`.
+This will save the configuration to `~/.gef.rc`.
 
 Another option is to disable colors. Try `gef config gef.disable_color True`.
 
 ## I don't want to add `-n` to every command to disable pager.
-Try `gef config gef.always_no_pager True` then `gef save`.
+To permanently disable the pager, use the command `gef config gef.always_no_pager True` followed by `gef save`.
 
 
 # About commands
@@ -291,6 +353,9 @@ Currently, at least following commands do not work.
 * `knamespaces`
 * `kipcs`
 * `kfilesystems`
+
+If it does not work properly even though `CONFIG_RANDSTRUCT=n`, GEF may be failing to parse due to a change in `struct task_struct`, etc.
+If you think there is a problem with GEF, please report it on the issues page.
 
 ## `vmmap` command does not recognize option.
 Try `pagewalk` command.
@@ -358,6 +423,7 @@ further debugging may prove unreliable.
 ...
 ```
 If so, this is caused by the `continue-for-qemu-user` command.
+This problem occurs only when the configuration is `continue_for_qemu_user.use_fork = False`.
 
 `continue-for-qemu-user` is a command wrapper of `c`(=`continue`) that accepts `Ctrl+C` even during `continue` under qemu-user.
 On some architectures, this wrapper may not work properly when running dynamically linked binaries with qemu-user.
@@ -365,6 +431,7 @@ On some architectures, this wrapper may not work properly when running dynamical
 There are two ways to work around this:
 - Use the `main-break` command to reach `main` once, and this error will no longer occur.
 - Use the `continue` command instead of the `c` command (but `Ctrl+C` will not work).
+
 
 
 # About internal mechanism
@@ -517,9 +584,9 @@ But this is a personal development, so I have the final decision. I appreciate y
 
 ## What information should I provide when reporting a issue?
 You will need a screenshot or a copy of the terminal output when the problem occurred.
-In addition, I am glad if there are the results of the `version` command and `arch-info` command.
+In addition, I am glad if there are the results of the `gef version` command and `gef status` command.
 
-Additionally, if the issue is related to kernel debugging, please provide a set of environments (`run.sh`, `bzImage`, `rootfs`, etc.) or where to get them.
+Additionally, if the issue is related to kernel debugging, please provide a set of environments (`run.sh`, `bzImage`, etc.) or where to get them.
 
 ## Is it okay to fork and modify?
 Yes. However, please follow the license.
@@ -530,3 +597,5 @@ Yes. However, please follow the license.
     * [gefを改造した話](https://hackmd.io/@bata24/rJVtBJsrP)
 * The story behind each command, etc.
     * [bata24/gefの機能紹介とか](https://hackmd.io/@bata24/SycIO4qPi)
+* The story behind each command, etc. 2024 Edition
+    * [bata24/gefの機能紹介とか 2024](https://hackmd.io/@bata24/SJOzjzqQ1e)
