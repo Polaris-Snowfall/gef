@@ -54262,6 +54262,7 @@ class Kernel:
                         dic["text_size"] = size
                         dic["text_end"] = vaddr + size
                         text_base_map_index = i
+                        gdb.set_convenience_variable("kbase",vaddr) #HanQi
                         break
 
         elif is_riscv64() or is_riscv32():
@@ -70003,7 +70004,13 @@ class BuddyDumpCommand(GenericCommand):
             per_cpu_pageset = read_int_from_memory(self.nodes[0] + self.offset_per_cpu_pageset) + self.cpu_offset[0]
             per_cpu_pageset = AddressUtil.align_address(per_cpu_pageset)
 
-        current = AddressUtil.align_address_to_size(per_cpu_pageset + 4 * 3, current_arch.ptrsize) # count, high, batch
+        gef_print(Kernel.kernel_version().version_tuple)
+        if(Kernel.kernel_version() < "5.14.0"):
+            current = AddressUtil.align_address_to_size(per_cpu_pageset + 4 * 3, current_arch.ptrsize) # count, high, batch
+        else:
+            current = AddressUtil.align_address_to_size(per_cpu_pageset + 4 * 3 + current_arch.ptrsize, current_arch.ptrsize) # count, high, batch
+            
+        gef_print("0x{:#x} -- 0x{:#x}".format(current,per_cpu_pageset))
         while not is_double_link_list(current): # search list_head
             current += current_arch.ptrsize * 2
         self.offset_lists = current - per_cpu_pageset
@@ -70793,6 +70800,7 @@ class KernelPipeCommand(GenericCommand):
 
         self.inode_filter = args.inode_filter
         self.file_filter = args.file_filter
+        self.bufs_from = args.bufs_from #HanQi
 
         # init
         ret = self.initialize()
